@@ -1,0 +1,44 @@
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from jose import jwt
+
+from app.config import settings
+
+
+def create_access_token(data: dict[str, Any]) -> str:
+    """
+    Create a JWT access token.
+    """
+    to_encode = data.copy()
+
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
+    to_encode.update({"exp": expire})
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+    )
+    return encoded_jwt
+
+def verify_access_token(token: str) -> str:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+
+        email = payload.get("sub")
+
+        if email is None:
+            raise ValueError("Invalid token.")
+
+        return email
+
+    except Exception:
+        raise ValueError("Invalid or expired token.")
